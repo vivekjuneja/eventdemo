@@ -38,4 +38,5 @@ Design Iteration #1
 10. Once a message is published on TOPIC-5, The Order Creation service that is subscribing to the service, is triggered. It creates a new Order, and puts the Order id into a Distributed session cache with the UUID. This message can be pulled by a Front end code or another presentation layer service to end the transaction.
 
 
-**Why is the design better than traditional design**
+**Why is the design better than traditional design ?**
+

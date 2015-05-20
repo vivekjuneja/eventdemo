@@ -1,6 +1,15 @@
 # eventdemo
 A reference implementation of an Event Driven systems to demonstrate concepts of CQRS, Event Sourcing using AWS
 
+**Problem Statement**
+
+
+**Solving this using Traditional Design techniques**
+
+
+**Solving this using Event Driven architecture**
+
+
 ** Overall Flow **
 Design Iteration #1
 
@@ -28,3 +37,5 @@ Design Iteration #1
 
 10. Once a message is published on TOPIC-5, The Order Creation service that is subscribing to the service, is triggered. It creates a new Order, and puts the Order id into a Distributed session cache with the UUID. This message can be pulled by a Front end code or another presentation layer service to end the transaction.
 
+
+**Why is the design better than traditional design**

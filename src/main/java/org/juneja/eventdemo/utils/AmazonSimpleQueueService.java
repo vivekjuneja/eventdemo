@@ -25,8 +25,7 @@ import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClient;
-import com.amazonaws.services.sqs.model.CreateQueueRequest;
-import com.amazonaws.services.sqs.model.DeleteMessageRequest;
+import com.amazonaws.services.sqs.model.GetQueueUrlResult;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
@@ -77,10 +76,13 @@ public class AmazonSimpleQueueService {
 
         try {
             // Create a queue
-            System.out.println("Creating a new SQS queue called MyQueue.\n");
-            CreateQueueRequest createQueueRequest = new CreateQueueRequest("TestQueue_EventDriven_2");
-            String myQueueUrl = sqs.createQueue(createQueueRequest).getQueueUrl();
-
+           // System.out.println("Creating a new SQS queue called MyQueue.\n");
+           // CreateQueueRequest createQueueRequest = new CreateQueueRequest("TestQueue_EventDriven_2");
+           // String myQueueUrl = sqs.createQueue(createQueueRequest).getQueueUrl();
+            
+            GetQueueUrlResult queueResult = sqs.getQueueUrl("TestQueue_EventDriven_2");
+            String myQueueUrl = queueResult.getQueueUrl();
+            
             // List queues
             System.out.println("Listing all queues in your account.\n");
             for (String queueUrl : sqs.listQueues().getQueueUrls()) {
@@ -89,13 +91,16 @@ public class AmazonSimpleQueueService {
             System.out.println();
 
             // Send a message
-            System.out.println("Sending a message to MyQueue.\n");
-            sqs.sendMessage(new SendMessageRequest(myQueueUrl, "This is my message text."));
+            //System.out.println("Sending a message to MyQueue.\n");
+            //sqs.sendMessage(new SendMessageRequest(myQueueUrl, "This is my new text."));
 
             // Receive messages
             System.out.println("Receiving messages from MyQueue.\n");
             ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(myQueueUrl);
             List<Message> messages = sqs.receiveMessage(receiveMessageRequest).getMessages();
+            
+            System.out.println("Number of messages : "+messages.size());
+            
             for (Message message : messages) {
                 System.out.println("  Message");
                 System.out.println("    MessageId:     " + message.getMessageId());
@@ -111,9 +116,9 @@ public class AmazonSimpleQueueService {
             System.out.println();
 
             // Delete a message
-            System.out.println("Deleting a message.\n");
-            String messageRecieptHandle = messages.get(0).getReceiptHandle();
-            sqs.deleteMessage(new DeleteMessageRequest(myQueueUrl, messageRecieptHandle));
+            //System.out.println("Deleting a message.\n");
+            //String messageRecieptHandle = messages.get(0).getReceiptHandle();
+            //sqs.deleteMessage(new DeleteMessageRequest(myQueueUrl, messageRecieptHandle));
 
             // Delete a queue
             /**

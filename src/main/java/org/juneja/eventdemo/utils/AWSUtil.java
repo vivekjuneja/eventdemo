@@ -1,5 +1,7 @@
 package org.juneja.eventdemo.utils;
 
+import java.util.List;
+
 import org.apache.log4j.Logger;
 
 import com.amazonaws.AmazonClientException;
@@ -13,7 +15,10 @@ import com.amazonaws.services.sns.model.PublishRequest;
 import com.amazonaws.services.sns.model.PublishResult;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClient;
+import com.amazonaws.services.sqs.model.DeleteMessageRequest;
 import com.amazonaws.services.sqs.model.GetQueueUrlResult;
+import com.amazonaws.services.sqs.model.Message;
+import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 
 public class AWSUtil {
@@ -79,6 +84,47 @@ public class AWSUtil {
 		String myQueueUrl = queueResult.getQueueUrl();
 
 		sqs.sendMessage(new SendMessageRequest(myQueueUrl, msg));
+
+	}
+	
+	public String receiveAndDeleteMessageFromQueue(String queueName) {
+		return receiveAndDeleteMessageFromQueue(Regions.DEFAULT_REGION, queueName);
+	}
+
+	public String receiveAndDeleteMessageFromQueue(Regions region, String queueName) {
+		Region sqsRegion = Region.getRegion(region);
+		AmazonSQS sqs = aws.getSQSConnection(sqsRegion);
+
+		GetQueueUrlResult queueResult = sqs.getQueueUrl(queueName);
+		String myQueueUrl = queueResult.getQueueUrl();
+
+		ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(
+				myQueueUrl);
+
+		receiveMessageRequest.setMaxNumberOfMessages(1);
+		List<Message> messages = sqs.receiveMessage(receiveMessageRequest)
+				.getMessages();
+
+		
+		String messageToReturn = null;
+		
+		for (Message message : messages) {
+			
+			System.out.println("Message to be deleted : "+message.getMessageId());
+			messageToReturn = message.getBody();
+			
+			System.out.println("Message Handle: "+message.getReceiptHandle());
+			/**
+			 * Delete the read message from the Queue
+			 */
+			DeleteMessageRequest deleteMessageRequest = new DeleteMessageRequest(
+					myQueueUrl, message.getReceiptHandle());
+			
+		
+		
+		}
+		
+		return messageToReturn;
 
 	}
 

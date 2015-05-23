@@ -13,10 +13,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.amazonaws.util.json.JSONObject;
 
-
 /**
  * 
- * Task allocator - gets a Task from the Task pool to service requests from Queue
+ * Task allocator - gets a Task from the Task pool to service requests from
+ * Queue
  * 
  * 
  * 
@@ -28,6 +28,8 @@ public class PurchaseRequestTaskServiceAPI {
 
 	AWSUtil aws = AWSUtil.newInstance();
 
+	private static boolean isSubscriptionConfirmed = true;
+
 	@RequestMapping("/purchase/{uuid}")
 	public Response purchaseProduct(@PathVariable(value = "uuid") String uuid,
 			HttpServletRequest request, HttpServletResponse response) {
@@ -38,21 +40,37 @@ public class PurchaseRequestTaskServiceAPI {
 		 * "Product Purchase message");
 		 * 
 		 **/
-		
+
 		/**
-		 * Received the Notification to allocate a Task to receive from the queue
+		 * Received the Notification to allocate a Task to receive from the
+		 * queue
 		 */
 
+		// If the Subscription has not been confirmed
+		if (!isSubscriptionConfirmed) {
+			return confirmSubscription(request, response);
+		}
+
 		System.out.println("Receieved Purchase Product Notification");
-		
+
 		/**
 		 * Now pull out the items from the Queue
 		 */
 		System.out.println("Reading and Deleting Message now");
-		String messageReturned = aws.receiveAndDeleteMessageFromQueue("TestQueue_EventDriven_2");
-		System.out.println("Message Returned : "+messageReturned);
+		String messageReturned = aws
+				.receiveAndDeleteMessageFromQueue("TestQueue_EventDriven_2");
+		System.out.println("Message Returned : " + messageReturned);
 
-		return new Response("1", ("Received Message "+messageReturned), "200 OK");
+		// Process the messageReturned
+
+		// Call the MongoClient to update the Product's quantity
+
+		// Generate a random Order number
+
+		// Return the Random Order number
+
+		return new Response("1", ("Received Message " + messageReturned),
+				"200 OK");
 	}
 
 	@RequestMapping("/subscription/confirm")
@@ -76,6 +94,10 @@ public class PurchaseRequestTaskServiceAPI {
 
 		System.out.println("Caller : "
 				+ request.getHeader("x-amz-sns-message-type"));
+
+		/**
+		 * TODO: Make call to confirm the subscription
+		 */
 
 		return new Response("1", "Ok Works !", "200 OK");
 

@@ -13,11 +13,8 @@ Demonstrate how a event driven architecture could improve the performance of an 
 Solution Iteration #1
 
 1. We have two services enclosed in a Monolith.
-
 2. The first service is ProductPurchaseAPI which accepts the an Order request from a customer for a particular product and given quantity
-
 3. This service accepts the request, generates a unique UUID number. It then pushes the UUID, Product ID and the Quantity to be bought onto a Message Queue (Currently, we use AWS SQS). After that, it sends a message to the Notification system (currently, we use AWS SNS) that a given Order request has arrived. 
-
 4. The second service is PurchaseRequestTaskService which gets notified from the Notification system whenever a new Order processing request arrives, and information relating to that is available from the afore-mentioned Queue (SQS).
 5. The PurchaseRequestTaskService then dequeues the Task from the Queue, and then process it. It makes a MongoDB Call (RESTful) to change the product count and create an Order ID for the given request.
 6. The PurchaseRequestTaskService pushes a message on an another Notification channel (SNS Topic) with the UUID and the Order ID. 

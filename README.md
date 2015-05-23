@@ -1,3 +1,5 @@
+[logo]: https://travis-ci.org/vivekjuneja/eventdemo.svg?branch=master "Build status"
+
 # eventdemo
 A reference implementation of an Event Driven systems to demonstrate concepts of CQRS, Event Sourcing using AWS
 

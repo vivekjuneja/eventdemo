@@ -4,11 +4,31 @@
 A reference implementation of an Event Driven systems to demonstrate concepts of CQRS, Event Sourcing using AWS
 
 **Problem Statement**
+Demonstrate how a event driven architecture could improve the performance of an E-Commerce order processing flow. 
 
 **Solving this using Traditional Design techniques**
 
 
 **Solving this using Event Driven architecture**
+Solution Iteration #1
+1. We have two services enclosed in a Monolith.
+2. The first service is ProductPurchaseAPI which accepts the an Order request from a customer for a particular product and given quantity
+3. This service accepts the request, generates a unique UUID number. It then pushes the UUID, Product ID and the Quantity to be bought onto a Message Queue (Currently, we use AWS SQS). After that, it sends a message to the Notification system (currently, we use AWS SNS) that a given Order request has arrived. 
+4. The second service is PurchaseRequestTaskService which gets notified from the Notification system whenever a new Order processing request arrives, and information relating to that is available from the afore-mentioned Queue (SQS).
+5. The PurchaseRequestTaskService then dequeues the Task from the Queue, and then process it. It makes a MongoDB Call (RESTful) to change the product count and create an Order ID for the given request.
+6. The PurchaseRequestTaskService pushes a message on an another Notification channel (SNS Topic) with the UUID and the Order ID. 
+7. The consumer or the UI can subscibe to the Notification channel (SNS Topic) and is presented with the generated Order ID.
+8. To Demonstrate scale, we have a Nginx load balancer that sits over the multiple PurchaseRequestTaskService instances. The Notification for a new Order request arrives to the Ngix load balancer, which is then routed to the appropriate PurchaseRequestTaskService instance.
+9. The PurchaseRequestTaskService can independently scale, and is Idempotent. Any number of such service can be added to increase the performance of the system. 
+10. Failure is handled by the Scalable and Reliable Queue implementation by AWS. 
+11. The JMeter script generates load on the system to demonstrate performance benefits
+12. Technologies Used : Spring Boot, Java 1.8, Spring Data, AWS SQS, AWS SNS, MongoDB, Docker Containers, Nginx, Ngrok Tunneling, Travis CI 
+
+Solution Iteration #2
+1. Divide PurchaseRequestTaskService further into more services 
+2. Build an Event Sourcing implementation to allow the Service instances to compute the given state of a Domain, instead of relying on a Lookup.
+3. Need to demonstrate that this solution is better than the traditional models - Monolith, Vertical Scaling etc.
+
 
 
 ** Overall Flow **

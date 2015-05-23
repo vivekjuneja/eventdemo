@@ -11,6 +11,7 @@ Demonstrate how a event driven architecture could improve the performance of an 
 
 **Solving this using Event Driven architecture**
 Solution Iteration #1
+
 1. We have two services enclosed in a Monolith.
 
 2. The first service is ProductPurchaseAPI which accepts the an Order request from a customer for a particular product and given quantity

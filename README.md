@@ -5,7 +5,6 @@ A reference implementation of an Event Driven systems to demonstrate concepts of
 
 **Problem Statement**
 
-
 **Solving this using Traditional Design techniques**
 
 

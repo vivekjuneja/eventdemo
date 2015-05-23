@@ -5,17 +5,18 @@ import java.io.BufferedReader;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.juneja.eventdemo.entity.Product;
 import org.juneja.eventdemo.entity.Response;
 import org.juneja.eventdemo.utils.AWSUtil;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
+import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
 
 /**
@@ -35,28 +36,22 @@ public class PurchaseRequestTaskServiceAPI {
 
 	private static boolean isSubscriptionConfirmed = true;
 
-	@RequestMapping("/purchase/{uuid}")
-	public Response purchaseProduct(@PathVariable(value = "uuid") String uuid,
-			HttpServletRequest request, HttpServletResponse response) {
-
-		/**
-		 * aws.publishMessageToTopic(
-		 * "arn:aws:sns:us-west-2:579199831891:TestTopic_EventDriven_2",
-		 * "Product Purchase message");
-		 * 
-		 **/
+	@RequestMapping("/purchase")
+	public Response purchaseProduct(HttpServletRequest request,
+			HttpServletResponse response) {
 
 		/**
 		 * Received the Notification to allocate a Task to receive from the
 		 * queue
 		 */
-
+		System.out.println("Checking if Subscription has been confirmed : "
+				+ isSubscriptionConfirmed);
 		// If the Subscription has not been confirmed
 		if (!isSubscriptionConfirmed) {
 			return confirmSubscription(request, response);
 		}
 
-		System.out.println("Receieved Purchase Product Notification");
+		System.out.println("Received Purchase Product Notification");
 
 		/**
 		 * Now pull out the items from the Queue
@@ -68,25 +63,71 @@ public class PurchaseRequestTaskServiceAPI {
 
 		// Process the messageReturned, extract the Product id and product
 		// quantity to be purchased
+		String[] messageReturnedArray = messageReturned.split(":");
+		String productId = messageReturnedArray[1];
+		String productQuantityToBuy = messageReturnedArray[2];
+		String uuid = messageReturnedArray[0];
+		System.out.println("productId : " + productId);
+		System.out.println("productQuantityToBuy : " + productQuantityToBuy);
+		System.out.println("uuid : " + uuid);
 
 		// Call the MongoClient to update the Product's quantity
-		System.out.println("**Call the MongoClient to update the Product's quantity**");
+		System.out
+				.println("**Call the MongoClient to update the Product's quantity**");
 		RestTemplate rest = new RestTemplate();
 		HttpHeaders headers = new HttpHeaders();
-		
-		String json = "{  \"id\" : 2, " +  "\"quantity\" : 6 }";
+
 		headers.add("Content-Type", "application/json");
 		headers.add("Accept", "*/*");
-		HttpEntity<String> requestEntity = new HttpEntity<String>(json, headers);
 
-		ResponseEntity<String> responseEntity = rest.exchange("http://localhost:9080"
-				+ "products/1", HttpMethod.PUT, requestEntity, String.class);
-		System.out.println(responseEntity.getStatusCode());
-		System.out.println(responseEntity.getBody());
+		// Find the current Quantity
+		HttpEntity<String> requestEntity_Search = new HttpEntity<String>(
+				headers);
+
+		String uriForDataAPI = "http://localhost:9080/products/search/findById?id="
+				+ productId;
+		ResponseEntity<String> responseEntity_Search = rest.exchange(
+				uriForDataAPI, HttpMethod.GET, requestEntity_Search,
+				String.class);
+		System.out.println("responseEntity_Search : "
+				+ responseEntity_Search.getStatusCode());
+		System.out.println("responseEntity_Search : "
+				+ responseEntity_Search.getBody());
+
+		// Process the JSON message
+		String quantity = null;
+		String responseEntitySearchStr = responseEntity_Search.getBody();
+		try {
+			JSONObject jsonObj = new JSONObject(responseEntitySearchStr);
+			quantity = jsonObj.getJSONObject("_embedded")
+					.getJSONArray("products").getJSONObject(0)
+					.getString("quantity");
+
+			System.out.println("Quantity : " + quantity);
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		String json = "{  \"id\" : "
+				+ productId
+				+ ", "
+				+ "\"quantity\" : "
+				+ (Integer.parseInt(quantity) - Integer
+						.parseInt(productQuantityToBuy)) + "}";
+
+		HttpEntity<String> requestEntity = new HttpEntity<String>(json, headers);
+		ResponseEntity<String> responseEntity = rest.exchange(
+				"http://localhost:9080" + "products/" + productId,
+				HttpMethod.PUT, requestEntity, String.class);
+		System.out.println("requestEntity : " + responseEntity.getStatusCode());
+		System.out.println("requestEntity : " + responseEntity.getBody());
 
 		// Generate a random Order number
 
 		// Return the Random Order number
+
+		// Delete the message
 
 		return new Response("1", ("Received Message " + messageReturned),
 				responseEntity.getStatusCode().toString());
@@ -106,17 +147,13 @@ public class PurchaseRequestTaskServiceAPI {
 
 		System.out.println("Json Body : " + jb);
 
-		JSONObject jsonObject = (JSONObject) JSONObject.stringToValue(jb
-				.toString());
-
-		System.out.println("JsonObject : " + jsonObject);
-
 		System.out.println("Caller : "
 				+ request.getHeader("x-amz-sns-message-type"));
 
 		/**
 		 * TODO: Make call to confirm the subscription
 		 */
+		PurchaseRequestTaskServiceAPI.isSubscriptionConfirmed = true;
 
 		return new Response("1", "Ok Works !", "200 OK");
 

@@ -120,6 +120,8 @@ public class AWSUtil {
 			DeleteMessageRequest deleteMessageRequest = new DeleteMessageRequest(
 					myQueueUrl, message.getReceiptHandle());
 			
+			sqs.deleteMessage(deleteMessageRequest);
+			
 		
 		
 		}

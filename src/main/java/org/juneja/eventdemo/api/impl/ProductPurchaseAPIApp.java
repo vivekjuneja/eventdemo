@@ -7,15 +7,11 @@ import org.springframework.boot.context.embedded.tomcat.TomcatEmbeddedServletCon
 import org.springframework.context.annotation.Bean;
 
 @SpringBootApplication
-public class ProductPurchaseAPIApp  {
-
-	
+public class ProductPurchaseAPIApp {
 
 	public static void main(String[] args) {
 		SpringApplication.run(ProductPurchaseAPIApp.class, args);
 	}
-
-	
 
 	@Bean
 	public EmbeddedServletContainerFactory servletContainer() {

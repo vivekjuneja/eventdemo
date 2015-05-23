@@ -7,9 +7,14 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.juneja.eventdemo.entity.Response;
 import org.juneja.eventdemo.utils.AWSUtil;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
 import com.amazonaws.util.json.JSONObject;
 
@@ -61,16 +66,30 @@ public class PurchaseRequestTaskServiceAPI {
 				.receiveAndDeleteMessageFromQueue("TestQueue_EventDriven_2");
 		System.out.println("Message Returned : " + messageReturned);
 
-		// Process the messageReturned
+		// Process the messageReturned, extract the Product id and product
+		// quantity to be purchased
 
 		// Call the MongoClient to update the Product's quantity
+		System.out.println("**Call the MongoClient to update the Product's quantity**");
+		RestTemplate rest = new RestTemplate();
+		HttpHeaders headers = new HttpHeaders();
+		
+		String json = "{  \"id\" : 2, " +  "\"quantity\" : 6 }";
+		headers.add("Content-Type", "application/json");
+		headers.add("Accept", "*/*");
+		HttpEntity<String> requestEntity = new HttpEntity<String>(json, headers);
+
+		ResponseEntity<String> responseEntity = rest.exchange("http://localhost:9080"
+				+ "products/1", HttpMethod.PUT, requestEntity, String.class);
+		System.out.println(responseEntity.getStatusCode());
+		System.out.println(responseEntity.getBody());
 
 		// Generate a random Order number
 
 		// Return the Random Order number
 
 		return new Response("1", ("Received Message " + messageReturned),
-				"200 OK");
+				responseEntity.getStatusCode().toString());
 	}
 
 	@RequestMapping("/subscription/confirm")

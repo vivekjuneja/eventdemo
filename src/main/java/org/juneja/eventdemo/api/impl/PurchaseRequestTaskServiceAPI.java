@@ -5,6 +5,7 @@ import java.io.BufferedReader;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.log4j.Logger;
 import org.juneja.eventdemo.entity.Product;
 import org.juneja.eventdemo.entity.Response;
 import org.juneja.eventdemo.utils.AWSUtil;
@@ -33,6 +34,7 @@ import com.amazonaws.util.json.JSONObject;
 public class PurchaseRequestTaskServiceAPI {
 
 	AWSUtil aws = AWSUtil.newInstance();
+	
 
 	private static boolean isSubscriptionConfirmed = true;
 
@@ -46,6 +48,7 @@ public class PurchaseRequestTaskServiceAPI {
 		 */
 		System.out.println("Checking if Subscription has been confirmed : "
 				+ isSubscriptionConfirmed);
+		
 		// If the Subscription has not been confirmed
 		if (!isSubscriptionConfirmed) {
 			return confirmSubscription(request, response);
@@ -80,10 +83,11 @@ public class PurchaseRequestTaskServiceAPI {
 		headers.add("Content-Type", "application/json");
 		headers.add("Accept", "*/*");
 
-		// Find the current Quantity
+		// Find the current Quantity available for the relevant Product
 		HttpEntity<String> requestEntity_Search = new HttpEntity<String>(
 				headers);
 
+		//TODO: Externalize the IP Address
 		String uriForDataAPI = "http://localhost:9080/products/search/findById?id="
 				+ productId;
 		ResponseEntity<String> responseEntity_Search = rest.exchange(
@@ -94,7 +98,7 @@ public class PurchaseRequestTaskServiceAPI {
 		System.out.println("responseEntity_Search : "
 				+ responseEntity_Search.getBody());
 
-		// Process the JSON message
+		// Process the JSON message received from the Mongo Server
 		String quantity = null;
 		String responseEntitySearchStr = responseEntity_Search.getBody();
 		try {
@@ -109,6 +113,7 @@ public class PurchaseRequestTaskServiceAPI {
 			e.printStackTrace();
 		}
 
+		//Call the MongoServer to update the quantity of the Product
 		String json = "{  \"id\" : "
 				+ productId
 				+ ", "
@@ -124,7 +129,7 @@ public class PurchaseRequestTaskServiceAPI {
 		System.out.println("requestEntity : " + responseEntity.getBody());
 
 		// Generate a random Order number
-
+		
 		// Return the Random Order number
 
 		// Delete the message
@@ -133,6 +138,12 @@ public class PurchaseRequestTaskServiceAPI {
 				responseEntity.getStatusCode().toString());
 	}
 
+	/**
+	 * Used for confirming subscription to Pub-Sub system
+	 * @param request
+	 * @param response
+	 * @return
+	 */
 	@RequestMapping("/subscription/confirm")
 	public Response confirmSubscription(HttpServletRequest request,
 			HttpServletResponse response) {

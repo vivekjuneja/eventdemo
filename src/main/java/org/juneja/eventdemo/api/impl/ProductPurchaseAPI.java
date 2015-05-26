@@ -24,11 +24,12 @@ public class ProductPurchaseAPI {
 		 **/
 
 		String uniqueGeneratedId = this.generateUUID();
-		String messageToSend =  uniqueGeneratedId + ":" + id + ":" + quantity ;
+		String messageToSend = uniqueGeneratedId + ":" + id + ":" + quantity;
 		System.out.println("Sending message : " + messageToSend + " to Queue");
 		aws.sendMessageToQueue("TestQueue_EventDriven_2", messageToSend);
 
-		String messageToPublish = "Purchase Work " + uniqueGeneratedId + " added to Queue";
+		String messageToPublish = "Purchase Work " + uniqueGeneratedId
+				+ " added to Queue";
 		System.out.println("Publish message : " + messageToPublish
 				+ " to Notification System");
 

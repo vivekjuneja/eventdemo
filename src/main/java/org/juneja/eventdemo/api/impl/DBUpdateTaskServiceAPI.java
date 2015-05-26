@@ -88,17 +88,19 @@ public class DBUpdateTaskServiceAPI {
 		// Process the messageReturned, extract the Product id and product
 		// quantity to be purchased
 		String[] messageReturnedArray = messageReturned.getResponseMessage()
-				.split(":");
+				.split("[|]");
 		String productId = messageReturnedArray[1];
 		String productQuantityRemaining = messageReturnedArray[2];
 		String productQuantityToBuy = messageReturnedArray[3];
 		String uuid = messageReturnedArray[0];
+		String callbackUri = messageReturnedArray[4];
 
 		System.out.println("productId : " + productId);
 		System.out.println("productQuantityRemaining : "
 				+ productQuantityRemaining);
 		System.out.println("productQuantityToBuy : " + productQuantityToBuy);
 		System.out.println("uuid : " + uuid);
+		System.out.println("callbackUri : " + callbackUri);
 
 		// Call the MongoServer to update the quantity of the Product
 		ResponseEntity<String> responseEntity = this.updateDomain(productId,
@@ -110,7 +112,7 @@ public class DBUpdateTaskServiceAPI {
 		// Push the Order Number to Queue and Notify the SNS
 		System.out.println("Stock available !");
 
-		String messageToSend = uuid + ":" + orderNum;
+		String messageToSend = uuid + "|" + orderNum + "|" + callbackUri;
 
 		aws.sendMessageToQueue("TestQueue_OrderNum_2", messageToSend);
 
@@ -187,7 +189,6 @@ public class DBUpdateTaskServiceAPI {
 				+ "\"quantity\" : "
 				+ (Integer.parseInt(quantity) - Integer
 						.parseInt(productQuantityToBuy)) + "}";
-
 
 		HttpEntity<String> requestEntity = new HttpEntity<String>(json, headers);
 		ResponseEntity<String> responseEntity = rest.exchange(

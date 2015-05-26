@@ -86,17 +86,22 @@ public class PurchaseRequestTaskServiceAPI {
 		// Process the messageReturned, extract the Product id and product
 		// quantity to be purchased
 		String[] messageReturnedArray = messageReturned.getResponseMessage()
-				.split(":");
+				.split("[|]");
+
+		System.out.println("messageReturnedArray : " + messageReturnedArray);
 		String productId = messageReturnedArray[1];
 		String productQuantityToBuy = messageReturnedArray[2];
 		String uuid = messageReturnedArray[0];
+		String callBackUri = messageReturnedArray[3];
+
 		System.out.println("productId : " + productId);
 		System.out.println("productQuantityToBuy : " + productQuantityToBuy);
 		System.out.println("uuid : " + uuid);
+		System.out.println("uri : " + callBackUri);
 
 		/**
 		 * Now, Check for Stock, and then if Stock exists, push a message to the
-		 * SQS and then SNS to trigger DB Updaste
+		 * SQS and then SNS to trigger DB Update
 		 */
 
 		Integer quantityRemaining = this.checkStock(productId);
@@ -109,8 +114,9 @@ public class PurchaseRequestTaskServiceAPI {
 			// Push a message to the Queue - TestQueue_EventDriven_2
 			System.out.println("Stock available !");
 
-			String messageToSend = uuid + ":" + productId + ":"
-					+ quantityRemaining + ":" + productQuantityToBuy;
+			String messageToSend = uuid + "|" + productId + "|"
+					+ quantityRemaining + "|" + productQuantityToBuy + "|"
+					+ callBackUri;
 
 			aws.sendMessageToQueue("TestQueue_DBUpdate_2", messageToSend);
 

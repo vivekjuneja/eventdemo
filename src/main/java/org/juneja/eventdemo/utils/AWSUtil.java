@@ -3,6 +3,7 @@ package org.juneja.eventdemo.utils;
 import java.util.List;
 
 import org.apache.log4j.Logger;
+import org.juneja.eventdemo.entity.Response;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.auth.AWSCredentials;
@@ -87,11 +88,39 @@ public class AWSUtil {
 
 	}
 	
-	public String receiveAndDeleteMessageFromQueue(String queueName) {
-		return receiveAndDeleteMessageFromQueue(Regions.DEFAULT_REGION, queueName);
+	
+	public void deleteMessageFromQueue(String queueName,
+			Response response) {
+		
+		deleteMessageFromQueue(Regions.DEFAULT_REGION, queueName, response);
+		
 	}
 
-	public String receiveAndDeleteMessageFromQueue(Regions region, String queueName) {
+	public void deleteMessageFromQueue(Regions region, String queueName,
+			Response response) {
+
+		Region sqsRegion = Region.getRegion(region);
+		AmazonSQS sqs = aws.getSQSConnection(sqsRegion);
+
+		GetQueueUrlResult queueResult = sqs.getQueueUrl(queueName);
+		String myQueueUrl = queueResult.getQueueUrl();
+
+		System.out.println("Message Handle: " + response.getResponseId());
+		/**
+		 * Delete the read message from the Queue
+		 */
+		DeleteMessageRequest deleteMessageRequest = new DeleteMessageRequest(
+				myQueueUrl, response.getResponseId());
+
+		sqs.deleteMessage(deleteMessageRequest);
+
+	}
+
+	public Response receiveMessageFromQueue(String queueName) {
+		return receiveMessageFromQueue(Regions.DEFAULT_REGION, queueName);
+	}
+
+	public Response receiveMessageFromQueue(Regions region, String queueName) {
 		Region sqsRegion = Region.getRegion(region);
 		AmazonSQS sqs = aws.getSQSConnection(sqsRegion);
 
@@ -105,28 +134,17 @@ public class AWSUtil {
 		List<Message> messages = sqs.receiveMessage(receiveMessageRequest)
 				.getMessages();
 
-		
 		String messageToReturn = null;
-		
-		for (Message message : messages) {
-			
-			System.out.println("Message to be deleted : "+message.getMessageId());
-			messageToReturn = message.getBody();
-			
-			System.out.println("Message Handle: "+message.getReceiptHandle());
-			/**
-			 * Delete the read message from the Queue
-			 */
-			DeleteMessageRequest deleteMessageRequest = new DeleteMessageRequest(
-					myQueueUrl, message.getReceiptHandle());
-			
-			sqs.deleteMessage(deleteMessageRequest);
-			
-		
-		
-		}
-		
-		return messageToReturn;
+
+		Message message = messages.get(0); // Get the First and Only Message
+
+		System.out.println("Message to be deleted : " + message.getMessageId());
+		messageToReturn = message.getBody();
+
+		Response response = new Response(message.getReceiptHandle(),
+				messageToReturn, "200");
+
+		return response;
 
 	}
 

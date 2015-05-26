@@ -30,7 +30,7 @@ import com.amazonaws.util.json.JSONObject;
  *
  */
 @RestController
-public class PurchaseRequestTaskServiceAPI {
+public class DBUpdateTaskServiceAPI {
 
 	AWSUtil aws = AWSUtil.newInstance();
 
@@ -55,11 +55,12 @@ public class PurchaseRequestTaskServiceAPI {
 		return new Response("1", "Hello", "World");
 	}
 
-	@RequestMapping("/purchase")
+	@RequestMapping("/domain/update")
 	public Response purchaseProduct(HttpServletRequest request,
 			HttpServletResponse response) {
 
-		System.out.println("Received Notification to start Purchase Task....");
+		System.out
+				.println("Received Notification to start Domain Update Task....");
 
 		System.out.println("isSubscriptionConfirmed : "
 				+ isSubscriptionConfirmed);
@@ -80,7 +81,7 @@ public class PurchaseRequestTaskServiceAPI {
 		 */
 		System.out.println("Reading and Deleting Message now");
 		Response messageReturned = aws
-				.receiveMessageFromQueue("TestQueue_EventDriven_2");
+				.receiveMessageFromQueue("TestQueue_EventDriven_DBUpdate_2");
 		System.out.println("Message Returned : " + messageReturned);
 
 		// Process the messageReturned, extract the Product id and product
@@ -88,79 +89,52 @@ public class PurchaseRequestTaskServiceAPI {
 		String[] messageReturnedArray = messageReturned.getResponseMessage()
 				.split(":");
 		String productId = messageReturnedArray[1];
-		String productQuantityToBuy = messageReturnedArray[2];
+		String productQuantityRemaining = messageReturnedArray[2];
+		String productQuantityToBuy = messageReturnedArray[3];
 		String uuid = messageReturnedArray[0];
+
 		System.out.println("productId : " + productId);
+		System.out.println("productQuantityRemaining : "
+				+ productQuantityRemaining);
 		System.out.println("productQuantityToBuy : " + productQuantityToBuy);
 		System.out.println("uuid : " + uuid);
 
-		/**
-		 * Now, Check for Stock, and then if Stock exists, push a message to the
-		 * SQS and then SNS to trigger DB Updaste
-		 */
+		// Call the MongoServer to update the quantity of the Product
+		String json = "{  \"id\" : "
+				+ productId
+				+ ", "
+				+ "\"quantity\" : "
+				+ (Integer.parseInt(productQuantityRemaining) - Integer
+						.parseInt(productQuantityToBuy)) + "}";
 
-		Integer quantityRemaining = this.checkStock(productId);
-	
-		String respString = "No Stock available";
+		RestTemplate rest = new RestTemplate();
+		HttpHeaders headers = new HttpHeaders();
 
-		if (quantityRemaining > 0) {
-			// Push a message to the Queue - TestQueue_EventDriven_2
-			System.out.println("Stock available !");
+		headers.add("Content-Type", "application/json");
+		headers.add("Accept", "*/*");
 
-			String messageToSend = uuid + ":" + productId + ":"
-					+ quantityRemaining + ":" + productQuantityToBuy;
+		HttpEntity<String> requestEntity = new HttpEntity<String>(json, headers);
+		ResponseEntity<String> responseEntity = rest.exchange(
+				"http://localhost:9080" + "products/" + productId,
+				HttpMethod.PUT, requestEntity, String.class);
+		System.out.println("requestEntity : " + responseEntity.getStatusCode());
+		System.out.println("requestEntity : " + responseEntity.getBody());
 
-			aws.sendMessageToQueue("TestQueue_DBUpdate_2", messageToSend);
+		// Generate a random Order number
 
-			// Publish a message to the SNS
+		// Return the Random Order number
 
-			String messageToPublish = "DB Updaste  Work " + uuid
-					+ " added to Queue";
+		// Delete the message
 
-			System.out.println("Publish message : " + messageToPublish
-					+ " to Notification System");
-
-			aws.publishMessageToTopic(
-					"arn:aws:sns:us-west-2:579199831891:TestTopic_EventDriven_DBUpdate",
-					messageToPublish);
-
-			// Return a positive Response
+		if (responseEntity.getStatusCode().is2xxSuccessful()) {
+			System.out
+					.println("Success ! Now deleting the message from the Queue");
+			aws.deleteMessageFromQueue("TestQueue_DBUpdate_2",
+					messageReturned);
 		}
-		
-		
-
-		/**
-		 * The following code will be put into another service
-		 * 
-		 * // Call the MongoServer to update the quantity of the Product String
-		 * json = "{  \"id\" : " + productId + ", " + "\"quantity\" : " +
-		 * (Integer.parseInt(quantity) - Integer
-		 * .parseInt(productQuantityToBuy)) + "}";
-		 * 
-		 * HttpEntity<String> requestEntity = new HttpEntity<String>(json,
-		 * headers); ResponseEntity<String> responseEntity = rest.exchange(
-		 * "http://localhost:9080" + "products/" + productId, HttpMethod.PUT,
-		 * requestEntity, String.class); System.out.println("requestEntity : " +
-		 * responseEntity.getStatusCode());
-		 * System.out.println("requestEntity : " + responseEntity.getBody());
-		 * 
-		 * // Generate a random Order number
-		 * 
-		 * // Return the Random Order number
-		 * 
-		 * // Delete the message
-		 * 
-		 * if (responseEntity.getStatusCode().is2xxSuccessful()) { System.out
-		 * .println("Success ! Now deleting the message from the Queue");
-		 * aws.deleteMessageFromQueue("TestQueue_EventDriven_2",
-		 * messageReturned); }
-		 * 
-		 * return new Response("1", ("Received Message " + messageReturned),
-		 * responseEntity.getStatusCode().toString());
-		 **/
 
 		return new Response("1", ("Received Message " + messageReturned),
-				respString);
+				  responseEntity.getStatusCode().toString());
 
 	}
 
@@ -168,7 +142,7 @@ public class PurchaseRequestTaskServiceAPI {
 
 		// Call the MongoClient to update the Product's quantity
 		System.out
-				.println("**Call the MongoClient to check the Product's quantity**");
+				.println("**Call the MongoClient to update the Product's quantity**");
 		RestTemplate rest = new RestTemplate();
 		HttpHeaders headers = new HttpHeaders();
 

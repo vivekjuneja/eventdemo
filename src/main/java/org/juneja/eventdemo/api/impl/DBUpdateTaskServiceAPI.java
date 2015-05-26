@@ -7,6 +7,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.juneja.eventdemo.entity.Response;
 import org.juneja.eventdemo.utils.AWSUtil;
+import org.juneja.eventdemo.utils.RandomString;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -104,8 +105,26 @@ public class DBUpdateTaskServiceAPI {
 				productQuantityRemaining, productQuantityToBuy);
 
 		// Generate a random Order number
+		String orderNum = RandomString.generateUUID(20);
 
-		// Return the Random Order number
+		// Push the Order Number to Queue and Notify the SNS
+		System.out.println("Stock available !");
+
+		String messageToSend = uuid + ":" + orderNum;
+
+		aws.sendMessageToQueue("TestQueue_OrderNum_2", messageToSend);
+
+		// Publish a message to the SNS
+
+		String messageToPublish = "Order Number for " + uuid + " added to Queue";
+
+		System.out.println("Publish message : " + messageToPublish
+				+ " to Notification System");
+
+		String returnStatus = aws
+				.publishMessageToTopic(
+						"arn:aws:sns:us-west-2:579199831891:TestTopic_EventDriven_OrderNum",
+						messageToPublish);
 
 		// Delete the message
 

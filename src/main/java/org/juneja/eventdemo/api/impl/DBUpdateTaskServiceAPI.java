@@ -116,7 +116,8 @@ public class DBUpdateTaskServiceAPI {
 
 		// Publish a message to the SNS
 
-		String messageToPublish = "Order Number for " + uuid + " added to Queue";
+		String messageToPublish = "Order Number for " + uuid
+				+ " added to Queue";
 
 		System.out.println("Publish message : " + messageToPublish
 				+ " to Notification System");
@@ -142,18 +143,51 @@ public class DBUpdateTaskServiceAPI {
 	private ResponseEntity<String> updateDomain(String productId,
 			String productQuantityRemaining, String productQuantityToBuy) {
 
-		String json = "{  \"id\" : "
-				+ productId
-				+ ", "
-				+ "\"quantity\" : "
-				+ (Integer.parseInt(productQuantityRemaining) - Integer
-						.parseInt(productQuantityToBuy)) + "}";
-
+		// Call the MongoClient to update the Product's quantity
+		System.out
+				.println("**Call the MongoClient to check the Product's quantity**");
 		RestTemplate rest = new RestTemplate();
 		HttpHeaders headers = new HttpHeaders();
 
 		headers.add("Content-Type", "application/json");
 		headers.add("Accept", "*/*");
+
+		// Find the current Quantity available for the relevant Product
+		HttpEntity<String> requestEntity_Search = new HttpEntity<String>(
+				headers);
+
+		// TODO: Externalize the IP Address
+		String uriForDataAPI = this.uriForDataAPI + "?id=" + productId;
+		ResponseEntity<String> responseEntity_Search = rest.exchange(
+				uriForDataAPI, HttpMethod.GET, requestEntity_Search,
+				String.class);
+		System.out.println("responseEntity_Search : "
+				+ responseEntity_Search.getStatusCode());
+		System.out.println("responseEntity_Search : "
+				+ responseEntity_Search.getBody());
+
+		// Process the JSON message received from the Mongo Server
+		String quantity = null;
+		String responseEntitySearchStr = responseEntity_Search.getBody();
+		try {
+			JSONObject jsonObj = new JSONObject(responseEntitySearchStr);
+			quantity = jsonObj.getJSONObject("_embedded")
+					.getJSONArray("products").getJSONObject(0)
+					.getString("quantity");
+
+			System.out.println("Quantity : " + quantity);
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		String json = "{  \"id\" : "
+				+ productId
+				+ ", "
+				+ "\"quantity\" : "
+				+ (Integer.parseInt(quantity) - Integer
+						.parseInt(productQuantityToBuy)) + "}";
+
 
 		HttpEntity<String> requestEntity = new HttpEntity<String>(json, headers);
 		ResponseEntity<String> responseEntity = rest.exchange(

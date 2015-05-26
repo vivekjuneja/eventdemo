@@ -4,7 +4,9 @@ import java.util.Random;
 
 public class RandomString {
 
-	  private static final char[] symbols;
+	  public static final int UUID_LENGTH = 10;
+
+	private static final char[] symbols;
 
 	  static {
 	    StringBuilder tmp = new StringBuilder();
@@ -25,9 +27,15 @@ public class RandomString {
 	    buf = new char[length];
 	  }
 
-	  public String nextString() {
+	  private String nextString() {
 	    for (int idx = 0; idx < buf.length; ++idx) 
 	      buf[idx] = symbols[random.nextInt(symbols.length)];
 	    return new String(buf);
 	  }
+	  
+	  public static String generateUUID(Integer length) {
+			RandomString randomStringGen = new RandomString(length);
+			return randomStringGen.nextString();
+
+		}
 	}

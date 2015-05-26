@@ -100,8 +100,10 @@ public class PurchaseRequestTaskServiceAPI {
 		 */
 
 		Integer quantityRemaining = this.checkStock(productId);
-	
+
 		String respString = "No Stock available";
+
+		String returnStatus = "";
 
 		if (quantityRemaining > 0) {
 			// Push a message to the Queue - TestQueue_EventDriven_2
@@ -114,20 +116,26 @@ public class PurchaseRequestTaskServiceAPI {
 
 			// Publish a message to the SNS
 
-			String messageToPublish = "DB Updaste  Work " + uuid
+			String messageToPublish = "DB Update  Work " + uuid
 					+ " added to Queue";
 
 			System.out.println("Publish message : " + messageToPublish
 					+ " to Notification System");
 
-			aws.publishMessageToTopic(
-					"arn:aws:sns:us-west-2:579199831891:TestTopic_EventDriven_DBUpdate",
-					messageToPublish);
+			returnStatus = aws
+					.publishMessageToTopic(
+							"arn:aws:sns:us-west-2:579199831891:TestTopic_EventDriven_DBUpdate",
+							messageToPublish);
 
 			// Return a positive Response
 		}
-		
-		
+
+		if (!returnStatus.isEmpty()) {
+			System.out
+					.println("Success ! Now deleting the message from the Purchase Task Queue");
+			aws.deleteMessageFromQueue("TestQueue_EventDriven_2",
+					messageReturned);
+		}
 
 		/**
 		 * The following code will be put into another service
@@ -215,7 +223,7 @@ public class PurchaseRequestTaskServiceAPI {
 	 * @param response
 	 * @return
 	 */
-	@RequestMapping("/subscription/confirm")
+	@RequestMapping("purchase/subscription/confirm")
 	public Response confirmSubscription(HttpServletRequest request,
 			HttpServletResponse response) {
 		StringBuffer jb = new StringBuffer();

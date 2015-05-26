@@ -14,6 +14,7 @@ public class ProductPurchaseAPI {
 
 	AWSUtil aws = AWSUtil.newInstance();
 	
+	
 
 	@Value("${isSubscriptionConfirmed}")
 	private  boolean isSubscriptionConfirmed;
@@ -44,7 +45,7 @@ public class ProductPurchaseAPI {
 		 * "Product Purchase message");
 		 **/
 
-		String uniqueGeneratedId = this.generateUUID();
+		String uniqueGeneratedId = RandomString.generateUUID(RandomString.UUID_LENGTH);
 		String messageToSend = uniqueGeneratedId + ":" + id + ":" + quantity;
 		System.out.println("Sending message : " + messageToSend + " to Queue");
 		aws.sendMessageToQueue("TestQueue_EventDriven_2", messageToSend);
@@ -61,9 +62,5 @@ public class ProductPurchaseAPI {
 		return new Response("1", messageToPublish, "200 OK");
 	}
 
-	private String generateUUID() {
-		RandomString randomStringGen = new RandomString(10);
-		return randomStringGen.nextString();
-
-	}
+	
 }
